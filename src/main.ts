@@ -66,9 +66,9 @@ document.addEventListener('touchstart', () => {
   if (initiatedDeviceOrientation) return;
     window.addEventListener('deviceorientation', (event) => {
     const gamma = event.gamma ?? 0;;
-    if (gamma < -15) {
+    if (gamma < -8) {
       player.currentSpeed = -1 * Math.abs(player.speed);
-    } else if (gamma > 15) {
+    } else if (gamma > 8) {
       player.currentSpeed = Math.abs(player.speed);
     } else {
       player.currentSpeed = 0;
