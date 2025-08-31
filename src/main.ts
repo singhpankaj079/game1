@@ -1,6 +1,8 @@
 import { Alien } from './entities/alien';
 import { Bullet } from './entities/bullet';
+import { Explosion } from './entities/explosion';
 import { Player } from './entities/player';
+import { SoundService } from './service/sound-service';
 import './style.css';
 
 let player: Player;
@@ -14,6 +16,7 @@ let lastSpawnTime = 0;
 let numberOfAliensDestroyed = 0;
 let numberOfAliensMissed = 0;
 let gameTimeInSeconds: number = 0;
+let explosions: Explosion[] = [];
 
 function setupCanvas() {
   const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -49,8 +52,9 @@ let initiatedDeviceOrientation = false;
 
 document.addEventListener('touchstart', () => {
   bullets.push(new Bullet(player.x, player.y - player.height / 3 * 2, 0, -500, 5, 'yellow'));
+  playShootSound();
   if (initiatedDeviceOrientation) return;
-    window.addEventListener('deviceorientation', (event) => {
+  window.addEventListener('deviceorientation', (event) => {
     const gamma = event.gamma ?? 0;;
     if (gamma < 3) {
       player.currentSpeed = -1 * Math.abs(player.speed);
@@ -72,9 +76,10 @@ document.addEventListener('keydown', (event) => {
       break;
     case 'ArrowRight':
       player.currentSpeed = Math.abs(player.speed);
-      break;  
+      break;
     case ' ':
       bullets.push(new Bullet(player.x, player.y - player.height / 3 * 2, 0, -500, 5, 'yellow'));
+      playShootSound();
       break;
   }
 });
@@ -151,6 +156,8 @@ function updateAliens(deltaTime: number, context: CanvasRenderingContext2D) {
         removedAliens.push(alien);
         removedBullets.push(bullet);
         numberOfAliensDestroyed += 1;
+        playExplosionSound();
+        explosions.push(new Explosion(alien.x, alien.y, alien.width, alien.height, gameTimeInSeconds * 1000 + 100));
         return;
       }
     });
@@ -158,8 +165,27 @@ function updateAliens(deltaTime: number, context: CanvasRenderingContext2D) {
     removedBullets = []
   });
   aliens = aliens.filter((alien) => !removedAliens.includes(alien));
+  explosions = explosions.filter((explosion) => explosion.shouldDisplay);
+  explosions.forEach((explosion) => {
+    explosion.update(gameTimeInSeconds * 1000);
+    explosion.draw(context);
+  });
   removedAliens = [];
   aliens.forEach((alien) => {
     alien.draw(context);
   });
+}
+
+function playShootSound() {
+  SoundService.getInstance().getSound('/assets/sounds/laser-gun-shot.mp3').then((explosionSound) => {
+    const shootSoundClone = explosionSound?.cloneNode() as HTMLAudioElement;
+    shootSoundClone.play();
+});
+}
+
+function playExplosionSound() {
+  SoundService.getInstance().getSound('/assets/sounds/alien-explosion.mp3').then((explosionSound) => {
+    const explosionSoundClone = explosionSound?.cloneNode(true) as HTMLAudioElement;
+    explosionSoundClone.play();
+});
 }

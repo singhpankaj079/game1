@@ -17,7 +17,6 @@ export class Alien {
         this.color = color;
         this.speed = speed;
         this.image = new Image();
-        this.image.src = '/assets/images/alien1.jpg';
     }
 
     draw(context: CanvasRenderingContext2D) {
