@@ -46,29 +46,15 @@ window.onload = () => {
   requestAnimationFrame(gameLoop);
 };
 let initiatedDeviceOrientation = false;
-document.addEventListener('click', () => {
-  if (initiatedDeviceOrientation) return;
- window.addEventListener('deviceorientation', (event) => {
-    const gamma = event.gamma ?? 0;;
-    if (gamma < -3) {
-      player.currentSpeed = -1 * Math.abs(player.speed);
-    } else if (gamma > 3) {
-      player.currentSpeed = Math.abs(player.speed);
-    } else {
-      player.currentSpeed = 0;
-    }
-  });
-  initiatedDeviceOrientation = true;
-});
 
 document.addEventListener('touchstart', () => {
   bullets.push(new Bullet(player.x, player.y - player.height / 3 * 2, 0, -500, 5, 'yellow'));
   if (initiatedDeviceOrientation) return;
     window.addEventListener('deviceorientation', (event) => {
     const gamma = event.gamma ?? 0;;
-    if (gamma < -8) {
+    if (gamma < 5) {
       player.currentSpeed = -1 * Math.abs(player.speed);
-    } else if (gamma > 8) {
+    } else if (gamma > 5) {
       player.currentSpeed = Math.abs(player.speed);
     } else {
       player.currentSpeed = 0;
