@@ -62,12 +62,13 @@ document.addEventListener('click', () => {
 });
 
 document.addEventListener('touchstart', () => {
+  bullets.push(new Bullet(player.x, player.y - player.height / 3 * 2, 0, -500, 5, 'yellow'));
   if (initiatedDeviceOrientation) return;
     window.addEventListener('deviceorientation', (event) => {
     const gamma = event.gamma ?? 0;;
-    if (gamma < -3) {
+    if (gamma < -15) {
       player.currentSpeed = -1 * Math.abs(player.speed);
-    } else if (gamma > 3) {
+    } else if (gamma > 15) {
       player.currentSpeed = Math.abs(player.speed);
     } else {
       player.currentSpeed = 0;
@@ -120,7 +121,7 @@ function gameLoop(time: number) {
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.fillStyle = 'black';
   context.fillRect(0, 0, canvas.width, canvas.height);
-  player.update(deltaTime);
+  player.update(deltaTime, context);
   player.draw(context);
   bullets.forEach((bullet) => {
     bullet.update(deltaTime);
@@ -131,9 +132,9 @@ function gameLoop(time: number) {
   requestAnimationFrame(gameLoop);
   context.fillStyle = 'white';
   context.font = '20px Arial';
-  context.fillText(`Aliens Destroyed: ${numberOfAliensDestroyed}`, 10, 30);
-  context.fillText(`Aliens Missed: ${numberOfAliensMissed}`, 10, 60);
-  context.fillText(`Time: ${gameTimeInSeconds} s`, 10, 90);
+  context.fillText(`Kills: ${numberOfAliensDestroyed}`, 10, 30);
+  context.fillText(`Missed: ${numberOfAliensMissed}`, 10, 60);
+  context.fillText(`Time: ${gameTimeInSeconds.toFixed(0)} s`, 10, 90);
 }
 
 function updateAliens(deltaTime: number, context: CanvasRenderingContext2D) {

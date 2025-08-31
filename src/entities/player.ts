@@ -29,8 +29,12 @@ export class Player {
         context.fill();
     }
 
-    update(deltaTime: number) {
+    update(deltaTime: number, context: CanvasRenderingContext2D) {
+        let lastX = this.x;
         this.x += this.currentSpeed * deltaTime / 1000;
+        if (this.x > context.canvas.width - this.width / 2 || this.x < this.width / 2) {
+            this.x = lastX;
+        }
     }
 
 }
