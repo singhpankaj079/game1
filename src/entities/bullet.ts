@@ -17,11 +17,10 @@ export class Bullet {
 
     draw(context: CanvasRenderingContext2D) {
         context.beginPath();
-        context.moveTo(this.x, this.y);
-        context.lineTo(this.x, this.y - this.length);
-        context.strokeStyle = this.color;
-        context.lineWidth = 5;
-        context.stroke();
+        context.fillStyle = this.color;
+        context.arc(this.x, this.y, this.length / 2, 0, Math.PI * 2);
+        context.fill();
+        context.closePath();
     }
 
     update(deltaTime: number) {

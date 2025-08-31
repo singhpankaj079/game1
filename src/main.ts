@@ -17,6 +17,8 @@ let numberOfAliensDestroyed = 0;
 let numberOfAliensMissed = 0;
 let gameTimeInSeconds: number = 0;
 let explosions: Explosion[] = [];
+let aliensSpawnAreaWidth = 800;
+let isGameOver = false;
 
 function setupCanvas() {
   const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -38,6 +40,7 @@ function setupCanvas() {
 
   player = new Player(canvas.width / 2, canvas.height - 50, 50, 50, 'blue', 300);
   player.draw(context);
+  aliensSpawnAreaWidth = Math.min(aliensSpawnAreaWidth, canvas.width);
   let alienX = Date.now() % (canvas.width - 50);
   console.log(alienX);
   let alien = new Alien(alienX, 0, 50, 50, 'green', 100);
@@ -96,6 +99,9 @@ document.addEventListener('keyup', (event) => {
 });
 
 function gameLoop(time: number) {
+  if (checkGameOver()) { 
+    return;
+  }
   gameTimeInSeconds = Number(((1 + time) / 1000).toFixed(2));
   spawnIntervalInSeconds = Math.max(intialSpawnIntervalInSeconds - gameTimeInSeconds / 10, 1)
   if (lastTime == -1) {
@@ -134,8 +140,9 @@ function updateAliens(deltaTime: number, context: CanvasRenderingContext2D) {
   });
   if (lastTime - lastSpawnTime > spawnIntervalInSeconds * 1000) {
     lastSpawnTime = lastTime;
+    const spawnAreaStartX = Math.max(0, (context.canvas.width - aliensSpawnAreaWidth) / 2);
     for (let i = 0; i < aliensPerSpawn; i++) {
-      let alienX = Math.floor(Date.now() * Math.random()) % (context.canvas.width - 50);
+      let alienX = spawnAreaStartX + Math.floor(Date.now() * Math.random()) % (aliensSpawnAreaWidth);
       let alien = new Alien(alienX, 0, 50, 50, 'green', 100);
       aliens.push(alien);
     }
@@ -188,4 +195,31 @@ function playExplosionSound() {
     const explosionSoundClone = explosionSound?.cloneNode(true) as HTMLAudioElement;
     explosionSoundClone.play();
 });
+}
+
+function checkGameOver() {
+  if (isGameOver) return true;
+  aliens.forEach((alien) => {
+    if (alien.y + alien.height >= player.y - player.height / 3 * 2 && (alien.x + alien.width >= player.x - player.width / 2 && alien.x <= player.x + player.width / 2)) {
+      isGameOver = true;
+      return;
+    }
+  });
+  isGameOver = isGameOver || numberOfAliensMissed >= 10;
+  if (isGameOver) {
+    const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+    if (!canvas) return;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+    context.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = 'white';
+    context.font = '50px Arial';
+    context.fillText('Game Over', canvas.width / 2 - 100, canvas.height / 2);
+    context.font = '30px Arial';
+    context.fillText(`Kills: ${numberOfAliensDestroyed}`, canvas.width / 2 - 70, canvas.height / 2 + 50);
+    context.fillText(`Missed: ${numberOfAliensMissed}`, canvas.width / 2 - 70, canvas.height / 2 + 90);
+    context.fillText(`Time: ${gameTimeInSeconds.toFixed(0)} s`, canvas.width / 2 - 70, canvas.height / 2 + 130);
+  }
+  return isGameOver;
 }
