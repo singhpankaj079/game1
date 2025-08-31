@@ -1,0 +1,178 @@
+import { Alien } from './entities/alien';
+import { Bullet } from './entities/bullet';
+import { Player } from './entities/player';
+import './style.css';
+
+let player: Player;
+let bullets: Bullet[] = [];
+let aliens: Alien[] = [];
+let lastTime = -1;
+let aliensPerSpawn = 1;
+let intialSpawnIntervalInSeconds = 5;
+let spawnIntervalInSeconds = 5;
+let lastSpawnTime = 0;
+let numberOfAliensDestroyed = 0;
+let numberOfAliensMissed = 0;
+let gameTimeInSeconds: number = 0;
+
+function setupCanvas() {
+  const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+  if (!canvas) {
+    console.error('Canvas element not found!');
+    return;
+  }
+
+  const context = canvas.getContext('2d');
+  if (!context) {
+    console.error('Failed to get 2D context!');
+    return;
+  }
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  context.fillStyle = 'black';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  player = new Player(canvas.width / 2, canvas.height - 50, 50, 50, 'blue', 300);
+  player.draw(context);
+  let alienX = Date.now() % (canvas.width - 50);
+  console.log(alienX);
+  let alien = new Alien(alienX, 0, 50, 50, 'green', 100);
+  aliens.push(alien);
+}
+
+window.onload = () => {
+  setupCanvas();
+  requestAnimationFrame(gameLoop);
+};
+let initiatedDeviceOrientation = false;
+document.addEventListener('click', () => {
+  if (initiatedDeviceOrientation) return;
+ window.addEventListener('deviceorientation', (event) => {
+    const gamma = event.gamma ?? 0;;
+    if (gamma < -3) {
+      player.currentSpeed = -1 * Math.abs(player.speed);
+    } else if (gamma > 3) {
+      player.currentSpeed = Math.abs(player.speed);
+    } else {
+      player.currentSpeed = 0;
+    }
+  });
+  initiatedDeviceOrientation = true;
+});
+
+document.addEventListener('touchstart', () => {
+  if (initiatedDeviceOrientation) return;
+    window.addEventListener('deviceorientation', (event) => {
+    const gamma = event.gamma ?? 0;;
+    if (gamma < -3) {
+      player.currentSpeed = -1 * Math.abs(player.speed);
+    } else if (gamma > 3) {
+      player.currentSpeed = Math.abs(player.speed);
+    } else {
+      player.currentSpeed = 0;
+    }
+  });
+  initiatedDeviceOrientation = true;
+});
+
+document.addEventListener('keydown', (event) => {
+  if (!player) return;
+
+  switch (event.key) {
+    case 'ArrowLeft':
+      player.currentSpeed = -1 * Math.abs(player.speed);
+      break;
+    case 'ArrowRight':
+      player.currentSpeed = Math.abs(player.speed);
+      break;  
+    case ' ':
+      bullets.push(new Bullet(player.x, player.y - player.height / 3 * 2, 0, -500, 5, 'yellow'));
+      break;
+  }
+});
+
+document.addEventListener('keyup', (event) => {
+  if (!player) return;
+
+  switch (event.key) {
+    case 'ArrowLeft':
+    case 'ArrowRight':
+      player.currentSpeed = 0;
+      break;
+  }
+});
+
+function gameLoop(time: number) {
+  gameTimeInSeconds = Number(((1 + time) / 1000).toFixed(2));
+  spawnIntervalInSeconds = Math.max(intialSpawnIntervalInSeconds - gameTimeInSeconds / 10, 1)
+  if (lastTime == -1) {
+    lastTime = time;
+    requestAnimationFrame(gameLoop);
+    return;
+  }
+  let deltaTime = time - lastTime;
+  lastTime = time;
+  const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+  if (!canvas) return;
+  const context = canvas.getContext('2d');
+  if (!context) return;
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = 'black';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  player.update(deltaTime);
+  player.draw(context);
+  bullets.forEach((bullet) => {
+    bullet.update(deltaTime);
+    bullet.draw(context);
+  });
+  bullets = bullets.filter((bullet) => bullet.y + bullet.length > 0);
+  updateAliens(deltaTime, context);
+  requestAnimationFrame(gameLoop);
+  context.fillStyle = 'white';
+  context.font = '20px Arial';
+  context.fillText(`Aliens Destroyed: ${numberOfAliensDestroyed}`, 10, 30);
+  context.fillText(`Aliens Missed: ${numberOfAliensMissed}`, 10, 60);
+  context.fillText(`Time: ${gameTimeInSeconds} s`, 10, 90);
+}
+
+function updateAliens(deltaTime: number, context: CanvasRenderingContext2D) {
+  aliens.forEach((alien) => {
+    alien.update(deltaTime);
+  });
+  if (lastTime - lastSpawnTime > spawnIntervalInSeconds * 1000) {
+    lastSpawnTime = lastTime;
+    for (let i = 0; i < aliensPerSpawn; i++) {
+      let alienX = Math.floor(Date.now() * Math.random()) % (context.canvas.width - 50);
+      let alien = new Alien(alienX, 0, 50, 50, 'green', 100);
+      aliens.push(alien);
+    }
+  }
+  let initialAlienCount = aliens.length;
+  aliens = aliens.filter((alien) => alien.y < context.canvas.height);
+  numberOfAliensMissed += initialAlienCount - aliens.length;
+  let removedAliens: Alien[] = [];
+  aliens.forEach((alien) => {
+    let removedBullets: Bullet[] = [];
+    bullets.forEach((bullet) => {
+      if (
+        bullet.x >= alien.x &&
+        bullet.x <= alien.x + alien.width &&
+        bullet.y <= alien.y + alien.height &&
+        bullet.y > alien.y
+      ) {
+        removedAliens.push(alien);
+        removedBullets.push(bullet);
+        numberOfAliensDestroyed += 1;
+        return;
+      }
+    });
+    bullets = bullets.filter((bullet) => !removedBullets.includes(bullet));
+    removedBullets = []
+  });
+  aliens = aliens.filter((alien) => !removedAliens.includes(alien));
+  removedAliens = [];
+  aliens.forEach((alien) => {
+    alien.draw(context);
+  });
+}
