@@ -57,8 +57,29 @@ document.addEventListener('touchstart', () => {
   bullets.push(new Bullet(player.x, player.y - player.height / 3 * 2, 0, -500, 5, 'yellow'));
   playShootSound();
   if (initiatedDeviceOrientation) return;
-  window.addEventListener('deviceorientation', (event) => {
-    const gamma = event.gamma ?? 0;;
+  // @ts-ignore
+  if (typeof window.DeviceOrientationEvent['requestPermission'] === 'function') {
+      (window.DeviceOrientationEvent as any)?.requestPermission()
+      // @ts-ignore
+        .then(permissionState => {
+          if (permissionState === 'granted') {
+              initiatedDeviceOrientation = true;
+            window.addEventListener('deviceorientation', handleOrientation);
+          } else {
+            alert("Permission denied.");
+          }
+        })
+        //@ts-ignore
+        .catch(err => console.error("Permission error:", err));
+    } else {
+      // Non-iOS browsers
+      window.addEventListener('deviceorientation', handleOrientation);
+      initiatedDeviceOrientation = true;
+    }
+});
+
+function handleOrientation(event: DeviceOrientationEvent) {
+  const gamma = event.gamma ?? 0;;
     if (gamma < 5) {
       player.currentSpeed = -1 * Math.abs(player.speed);
     } else if (gamma > 5) {
@@ -66,9 +87,7 @@ document.addEventListener('touchstart', () => {
     } else {
       player.currentSpeed = 0;
     }
-  });
-  initiatedDeviceOrientation = true;
-});
+  }
 
 document.addEventListener('keydown', (event) => {
   if (!player) return;
