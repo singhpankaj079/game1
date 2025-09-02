@@ -40,7 +40,7 @@ function setupCanvas() {
   context.fillStyle = 'black';
   context.fillRect(0, 0, canvas.width, canvas.height);
 
-  player = new Player(canvas.width / 2, canvas.height - 50, 50, 50, 'blue', 300);
+  player = new Player(canvas.width / 2, canvas.height - 50, 50, 50, 'blue', 150);
   player.draw(context);
   aliensSpawnAreaWidth = Math.min(aliensSpawnAreaWidth, canvas.width);
   let alienX = Date.now() % (canvas.width - 50);
@@ -87,9 +87,9 @@ function addDeviceOrientationListener() {
 
 function handleOrientation(event: DeviceOrientationEvent) {
   const gamma = event.gamma ?? 0;;
-    if (gamma < 5) {
+    if (gamma < 10) {
       player.currentSpeed = -1 * Math.abs(player.speed);
-    } else if (gamma > 5) {
+    } else if (gamma > 10) {
       player.currentSpeed = Math.abs(player.speed);
     } else {
       player.currentSpeed = 0;
@@ -168,7 +168,7 @@ function updateAliens(deltaTime: number, context: CanvasRenderingContext2D) {
     lastSpawnTime = lastTime;
     const spawnAreaStartX = Math.max(0, (context.canvas.width - aliensSpawnAreaWidth) / 2);
     for (let i = 0; i < aliensPerSpawn; i++) {
-      let alienX = spawnAreaStartX + Math.floor(Date.now() * Math.random()) % (aliensSpawnAreaWidth);
+      let alienX = spawnAreaStartX + Math.floor(Date.now() * Math.random()) % (aliensSpawnAreaWidth - 50);
       let alien = new Alien(alienX, 0, 50, 50, 'green', 100);
       aliens.push(alien);
     }
