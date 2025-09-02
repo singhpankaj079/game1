@@ -18,6 +18,7 @@ let numberOfAliensMissed = 0;
 let gameTimeInSeconds: number = 0;
 let explosions: Explosion[] = [];
 let aliensSpawnAreaWidth = 800;
+let isGameStarted = false;
 let isGameOver = false;
 
 function setupCanvas() {
@@ -49,13 +50,17 @@ function setupCanvas() {
 
 window.onload = () => {
   setupCanvas();
-  requestAnimationFrame(gameLoop);
 };
 let initiatedDeviceOrientation = false;
 
 document.addEventListener('touchstart', () => {
-  bullets.push(new Bullet(player.x, player.y - player.height / 3 * 2, 0, -500, 5, 'yellow'));
-  playShootSound();
+  if (isGameStarted && !isGameOver) {
+    bullets.push(new Bullet(player.x, player.y - player.height / 3 * 2, 0, -500, 5, 'yellow'));
+    playShootSound();
+  }
+});
+
+function addDeviceOrientationListener() {
   if (initiatedDeviceOrientation) return;
   // @ts-ignore
   if (typeof window.DeviceOrientationEvent['requestPermission'] === 'function') {
@@ -63,20 +68,20 @@ document.addEventListener('touchstart', () => {
       // @ts-ignore
         .then(permissionState => {
           if (permissionState === 'granted') {
-              initiatedDeviceOrientation = true;
+            initiatedDeviceOrientation = true;
             window.addEventListener('deviceorientation', handleOrientation);
           } else {
             alert("Permission denied.");
           }
         })
         //@ts-ignore
-        .catch(err => console.error("Permission error:", err));
+        .catch(err => console.error("Permission error 123:", err));
     } else {
       // Non-iOS browsers
       window.addEventListener('deviceorientation', handleOrientation);
       initiatedDeviceOrientation = true;
     }
-});
+  }
 
 function handleOrientation(event: DeviceOrientationEvent) {
   const gamma = event.gamma ?? 0;;
@@ -241,4 +246,27 @@ function checkGameOver() {
     context.fillText(`Time: ${gameTimeInSeconds.toFixed(0)} s`, canvas.width / 2 - 70, canvas.height / 2 + 130);
   }
   return isGameOver;
+}
+
+let gameStartButton = document.getElementById('game-start-button');
+gameStartButton?.addEventListener('touchstart', () => {
+  if (isGameStarted) return;
+  isGameStarted = true;
+  gameStartButton.style.display = 'none';
+  showCanvas();
+  addDeviceOrientationListener();
+  requestAnimationFrame(gameLoop);
+});
+gameStartButton?.addEventListener('click', () => {
+  if (isGameStarted) return;
+  isGameStarted = true;
+  gameStartButton.style.display = 'none';
+  showCanvas();
+  requestAnimationFrame(gameLoop);
+});
+
+function showCanvas() {
+  const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+  if (!canvas) return;
+  canvas.style.display = 'block';
 }
