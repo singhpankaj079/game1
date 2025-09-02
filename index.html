@@ -7,10 +7,10 @@
     <title>Vite + TS</title>
   </head>
   <body>
-    <div id="game-start-button">Start game</div>
+    <script type="module" src="/src/main.ts"></script>
+    <div id="game-start-button" onPointerDown="startGame(event)">Start game</div>
     <div id="app">
       <canvas id="gameCanvas"></canvas>
     </div>
-    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

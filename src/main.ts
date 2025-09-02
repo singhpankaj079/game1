@@ -248,25 +248,24 @@ function checkGameOver() {
   return isGameOver;
 }
 
-let gameStartButton = document.getElementById('game-start-button');
-gameStartButton?.addEventListener('touchstart', () => {
+
+function startGame(event: PointerEvent) {
+  let gameStartButton = document.getElementById('game-start-button'); 
   if (isGameStarted) return;
   isGameStarted = true;
-  gameStartButton.style.display = 'none';
+  if (gameStartButton) {
+    gameStartButton.style.display = 'none';
+  }
   showCanvas();
-  addDeviceOrientationListener();
+  if (event.pointerType === 'touch') {
+    addDeviceOrientationListener();
+  }
   requestAnimationFrame(gameLoop);
-});
-gameStartButton?.addEventListener('click', () => {
-  if (isGameStarted) return;
-  isGameStarted = true;
-  gameStartButton.style.display = 'none';
-  showCanvas();
-  requestAnimationFrame(gameLoop);
-});
+}
 
 function showCanvas() {
   const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
   if (!canvas) return;
   canvas.style.display = 'block';
 }
+(window as any).startGame = startGame;
