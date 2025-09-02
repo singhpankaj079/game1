@@ -20,6 +20,7 @@ let explosions: Explosion[] = [];
 let aliensSpawnAreaWidth = 800;
 let isGameStarted = false;
 let isGameOver = false;
+let isMobile = false;
 
 function setupCanvas() {
   const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -54,6 +55,7 @@ window.onload = () => {
 let initiatedDeviceOrientation = false;
 
 document.addEventListener('touchstart', () => {
+  isMobile = true;
   if (isGameStarted && !isGameOver) {
     bullets.push(new Bullet(player.x, player.y - player.height / 3 * 2, 0, -500, 5, 'yellow'));
     playShootSound();
@@ -249,7 +251,7 @@ function checkGameOver() {
 }
 
 
-function startGame(event: PointerEvent) {
+function startGame() {
   let gameStartButton = document.getElementById('game-start-button'); 
   if (isGameStarted) return;
   isGameStarted = true;
@@ -257,7 +259,8 @@ function startGame(event: PointerEvent) {
     gameStartButton.style.display = 'none';
   }
   showCanvas();
-  if (event.pointerType === 'touch') {
+  isMobile = isMobile || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (isMobile) {
     addDeviceOrientationListener();
   }
   requestAnimationFrame(gameLoop);
