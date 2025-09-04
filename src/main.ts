@@ -87,9 +87,9 @@ function addDeviceOrientationListener() {
 
 function handleOrientation(event: DeviceOrientationEvent) {
   const gamma = event.gamma ?? 0;;
-    if (gamma < 10) {
+    if (gamma < 15) {
       player.currentSpeed = -1 * Math.abs(player.speed);
-    } else if (gamma > 10) {
+    } else if (gamma > 15) {
       player.currentSpeed = Math.abs(player.speed);
     } else {
       player.currentSpeed = 0;
@@ -107,6 +107,8 @@ document.addEventListener('keydown', (event) => {
       player.currentSpeed = Math.abs(player.speed);
       break;
     case ' ':
+    case 'Spacebar':
+    case 'ArrowUp':
       bullets.push(new Bullet(player.x, player.y - player.height / 3 * 2, 0, -500, 5, 'yellow'));
       playShootSound();
       break;
@@ -210,16 +212,14 @@ function updateAliens(deltaTime: number, context: CanvasRenderingContext2D) {
 }
 
 function playShootSound() {
-  SoundService.getInstance().getSound('/assets/sounds/laser-gun-shot.mp3').then((explosionSound) => {
-    const shootSoundClone = explosionSound?.cloneNode() as HTMLAudioElement;
-    shootSoundClone.play();
+  SoundService.getInstance().getSound(import.meta.env.BASE_URL + '/assets/sounds/laser-gun-shot.mp3').then((shootSound) => {
+    shootSound?.play();
 });
 }
 
 function playExplosionSound() {
-  SoundService.getInstance().getSound('/assets/sounds/alien-explosion.mp3').then((explosionSound) => {
-    const explosionSoundClone = explosionSound?.cloneNode(true) as HTMLAudioElement;
-    explosionSoundClone.play();
+  SoundService.getInstance().getSound(import.meta.env.BASE_URL + 'assets/sounds/alien-explosion.mp3').then((explosionSound) => {
+    explosionSound?.play();
 });
 }
 
@@ -262,6 +262,8 @@ function startGame() {
   isMobile = isMobile || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   if (isMobile) {
     addDeviceOrientationListener();
+  } else {
+    player.speed = 300;
   }
   requestAnimationFrame(gameLoop);
 }

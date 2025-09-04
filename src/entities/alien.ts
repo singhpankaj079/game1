@@ -20,7 +20,7 @@ export class Alien {
     }
 
     draw(context: CanvasRenderingContext2D) {
-        ImageService.getInstance().getImage('/assets/images/alien1.jpg').then((img) => {
+        ImageService.getInstance().getImage(import.meta.env.BASE_URL + 'assets/images/alien1.jpg').then((img) => {
             if (img) {
                 context.drawImage(img, this.x, this.y, this.width, this.height);
             }

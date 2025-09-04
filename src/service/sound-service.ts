@@ -1,9 +1,9 @@
 export class SoundService {
     private static instance: SoundService
-    private sounds: Map<string, HTMLAudioElement>;
+    private objectUrl: Map<string, string>;
 
     private constructor() {
-        this.sounds = new Map<string, HTMLAudioElement>();
+        this.objectUrl = new Map<string, string>();
     }
 
     public static getInstance(): SoundService {
@@ -12,27 +12,29 @@ export class SoundService {
         }
         return SoundService.instance;
     }
-    public loadSound(src: string): Promise<HTMLAudioElement> {
+    public loadSoundObjectUrl(src: string): Promise<string> {
         return new Promise((resolve, reject) => {
-            if (this.sounds.has(src)) {
-                resolve(this.sounds.get(src)!);
+            if (!this.objectUrl.has(src)) {
+                fetch(src)
+                    .then(response => response.blob())
+                    .then(blob => { 
+                        const url = URL.createObjectURL(blob);
+                        this.objectUrl.set(src, url);
+                        resolve(url);
+                    })
+                    .catch(reject);
                 return;
+            } else {
+                resolve(this.objectUrl.get(src)!);
             }
-            const audio = new Audio();
-            audio.onloadeddata = () => {
-                this.sounds.set(src, audio);
-                resolve(audio);
-            };
-            audio.onerror = reject;
-            audio.src = src;
-            audio.load();
         });
     }
 
     public async getSound(src: string): Promise<HTMLAudioElement | undefined> {
-        if (!this.sounds.has(src)) {
-            await this.loadSound(src);
-        }
-        return this.sounds.get(src);
+        const objectUrl = await this.loadSoundObjectUrl(src);
+        const audio = new Audio();
+        audio.src = objectUrl;
+        audio.load();
+        return audio;
     }
 }

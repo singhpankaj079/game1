@@ -20,7 +20,7 @@ export class Explosion {
         if (!this.shouldDisplay) {
             return;
         }
-        ImageService.getInstance().getImage('/assets/images/explosion.jpg').then((img) => {
+        ImageService.getInstance().getImage(import.meta.env.BASE_URL + 'assets/images/explosion.jpg').then((img) => {
                     if (img) {
                         context.drawImage(img, this.x, this.y, this.width, this.height);
                     }
