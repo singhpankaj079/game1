@@ -1,40 +1,43 @@
 export class SoundService {
     private static instance: SoundService
-    private objectUrl: Map<string, string>;
+    private soundToAudioBufferMap: Map<string, AudioBuffer>;
+    private audioContext: AudioContext;
 
-    private constructor() {
-        this.objectUrl = new Map<string, string>();
+    private constructor(audioContext: AudioContext) {
+        this.audioContext = audioContext;
+        this.soundToAudioBufferMap = new Map<string, AudioBuffer>();
     }
 
-    public static getInstance(): SoundService {
+    public static getInstance(audioContext: AudioContext): SoundService {
         if (!SoundService.instance) {
-            SoundService.instance = new SoundService();
+            SoundService.instance = new SoundService(audioContext);
         }
         return SoundService.instance;
     }
-    public loadSoundObjectUrl(src: string): Promise<string> {
+
+    public loadSoundPool(src: string): Promise<AudioBuffer> {
         return new Promise((resolve, reject) => {
-            if (!this.objectUrl.has(src)) {
+            if (!this.soundToAudioBufferMap.has(src)) {
                 fetch(src)
-                    .then(response => response.blob())
-                    .then(blob => { 
-                        const url = URL.createObjectURL(blob);
-                        this.objectUrl.set(src, url);
-                        resolve(url);
-                    })
-                    .catch(reject);
-                return;
+                    .then(response => response.arrayBuffer())
+                    .then(arrayBuffer => {
+                        this.audioContext.decodeAudioData(arrayBuffer).then(audioBuffer => {
+                            this.soundToAudioBufferMap.set(src, audioBuffer);
+                            resolve(audioBuffer)
+                        });
+
+                    }).catch(reject);
             } else {
-                resolve(this.objectUrl.get(src)!);
+                resolve(this.soundToAudioBufferMap.get(src)!);
             }
         });
     }
 
-    public async getSound(src: string): Promise<HTMLAudioElement | undefined> {
-        const objectUrl = await this.loadSoundObjectUrl(src);
-        const audio = new Audio();
-        audio.src = objectUrl;
-        audio.load();
-        return audio;
+    public async getAudioBufferSource(src: string): Promise<AudioBufferSourceNode| undefined> {
+        const audioBuffer = await this.loadSoundPool(src);
+        const audioBufferSource = this.audioContext.createBufferSource();
+        audioBufferSource.buffer = audioBuffer;
+        audioBufferSource.connect(this.audioContext.destination);
+        return audioBufferSource;
     }
 }

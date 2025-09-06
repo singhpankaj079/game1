@@ -21,6 +21,8 @@ let aliensSpawnAreaWidth = 800;
 let isGameStarted = false;
 let isGameOver = false;
 let isMobile = false;
+// @ts-ignore
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
 function setupCanvas() {
   const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -87,9 +89,9 @@ function addDeviceOrientationListener() {
 
 function handleOrientation(event: DeviceOrientationEvent) {
   const gamma = event.gamma ?? 0;;
-    if (gamma < 15) {
+    if (gamma < -2) {
       player.currentSpeed = -1 * Math.abs(player.speed);
-    } else if (gamma > 15) {
+    } else if (gamma > 2) {
       player.currentSpeed = Math.abs(player.speed);
     } else {
       player.currentSpeed = 0;
@@ -212,14 +214,14 @@ function updateAliens(deltaTime: number, context: CanvasRenderingContext2D) {
 }
 
 function playShootSound() {
-  SoundService.getInstance().getSound(import.meta.env.BASE_URL + '/assets/sounds/laser-gun-shot.mp3').then((shootSound) => {
-    shootSound?.play();
+  SoundService.getInstance(audioContext).getAudioBufferSource(import.meta.env.BASE_URL + '/assets/sounds/laser-gun-shot.wav').then((shootSoundBufferSource) => {
+    shootSoundBufferSource?.start();
 });
 }
 
 function playExplosionSound() {
-  SoundService.getInstance().getSound(import.meta.env.BASE_URL + 'assets/sounds/alien-explosion.mp3').then((explosionSound) => {
-    explosionSound?.play();
+  SoundService.getInstance(audioContext).getAudioBufferSource(import.meta.env.BASE_URL + 'assets/sounds/alien-explosion.wav').then((explosionSoundBufferSource) => {
+    explosionSoundBufferSource?.start();
 });
 }
 
@@ -273,4 +275,6 @@ function showCanvas() {
   if (!canvas) return;
   canvas.style.display = 'block';
 }
+SoundService.getInstance(audioContext).loadSoundPool(import.meta.env.BASE_URL + 'assets/sounds/laser-gun-shot.wav');
+SoundService.getInstance(audioContext).loadSoundPool(import.meta.env.BASE_URL + 'assets/sounds/alien-explosion.wav');
 (window as any).startGame = startGame;
