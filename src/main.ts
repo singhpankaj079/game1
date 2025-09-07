@@ -2,12 +2,14 @@ import { Alien } from './entities/alien';
 import { Bullet } from './entities/bullet';
 import { Explosion } from './entities/explosion';
 import { Player } from './entities/player';
+import { Star } from './entities/star';
 import { SoundService } from './service/sound-service';
 import './style.css';
 
 let player: Player;
 let bullets: Bullet[] = [];
 let aliens: Alien[] = [];
+let stars: Star[] = [];
 let lastTime = -1;
 let aliensPerSpawn = 1;
 let intialSpawnIntervalInSeconds = 5;
@@ -17,7 +19,15 @@ let numberOfAliensDestroyed = 0;
 let numberOfAliensMissed = 0;
 let gameTimeInSeconds: number = 0;
 let explosions: Explosion[] = [];
-let aliensSpawnAreaWidth = 800;
+let aliensSpawnAreaWidth: number;
+let alienWidth: number;
+let alienHeight: number;
+let alienSpeed: number;
+let playerWidth: number;
+let playerHeight: number;
+let playerSpeed: number;
+let numberOfStars: number = 20;
+// let playerBulletSpeed: number;
 let isGameStarted = false;
 let isGameOver = false;
 let isMobile = false;
@@ -40,14 +50,20 @@ function setupCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   context.fillStyle = 'black';
-  context.fillRect(0, 0, canvas.width, canvas.height);
-
-  player = new Player(canvas.width / 2, canvas.height - 50, 50, 50, 'blue', 150);
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  initializeStars(context);
+  playerWidth = 50;
+  playerHeight = playerWidth;
+  playerSpeed = (canvas.width / 4);
+  player = new Player(canvas.width / 2, canvas.height - playerHeight, playerWidth, playerHeight, 'blue', playerSpeed);
   player.draw(context);
-  aliensSpawnAreaWidth = Math.min(aliensSpawnAreaWidth, canvas.width);
-  let alienX = Date.now() % (canvas.width - 50);
-  console.log(alienX);
-  let alien = new Alien(alienX, 0, 50, 50, 'green', 100);
+  aliensSpawnAreaWidth = canvas.width;
+  alienWidth = 50;
+  alienHeight = alienWidth;
+  alienSpeed = canvas.height / 20;
+  // playerBulletSpeed = alienSpeed * 2;
+  let alienX = Date.now() % (canvas.width / 2);
+  let alien = new Alien(alienX, 0, alienWidth, alienHeight, 'green', alienSpeed);
   aliens.push(alien);
 }
 
@@ -68,35 +84,35 @@ function addDeviceOrientationListener() {
   if (initiatedDeviceOrientation) return;
   // @ts-ignore
   if (typeof window.DeviceOrientationEvent['requestPermission'] === 'function') {
-      (window.DeviceOrientationEvent as any)?.requestPermission()
+    (window.DeviceOrientationEvent as any)?.requestPermission()
       // @ts-ignore
-        .then(permissionState => {
-          if (permissionState === 'granted') {
-            initiatedDeviceOrientation = true;
-            window.addEventListener('deviceorientation', handleOrientation);
-          } else {
-            alert("Permission denied.");
-          }
-        })
-        //@ts-ignore
-        .catch(err => console.error("Permission error 123:", err));
-    } else {
-      // Non-iOS browsers
-      window.addEventListener('deviceorientation', handleOrientation);
-      initiatedDeviceOrientation = true;
-    }
+      .then(permissionState => {
+        if (permissionState === 'granted') {
+          initiatedDeviceOrientation = true;
+          window.addEventListener('deviceorientation', handleOrientation);
+        } else {
+          alert("Permission denied.");
+        }
+      })
+      //@ts-ignore
+      .catch(err => console.error("Permission error 123:", err));
+  } else {
+    // Non-iOS browsers
+    window.addEventListener('deviceorientation', handleOrientation);
+    initiatedDeviceOrientation = true;
   }
+}
 
 function handleOrientation(event: DeviceOrientationEvent) {
   const gamma = event.gamma ?? 0;;
-    if (gamma < -2) {
-      player.currentSpeed = -1 * Math.abs(player.speed);
-    } else if (gamma > 2) {
-      player.currentSpeed = Math.abs(player.speed);
-    } else {
-      player.currentSpeed = 0;
-    }
+  if (gamma < -2) {
+    player.currentSpeed = -1 * Math.abs(player.speed);
+  } else if (gamma > 2) {
+    player.currentSpeed = Math.abs(player.speed);
+  } else {
+    player.currentSpeed = 0;
   }
+}
 
 document.addEventListener('keydown', (event) => {
   if (!player) return;
@@ -129,7 +145,7 @@ document.addEventListener('keyup', (event) => {
 });
 
 function gameLoop(time: number) {
-  if (checkGameOver()) { 
+  if (checkGameOver()) {
     return;
   }
   gameTimeInSeconds = Number(((1 + time) / 1000).toFixed(2));
@@ -146,8 +162,7 @@ function gameLoop(time: number) {
   const context = canvas.getContext('2d');
   if (!context) return;
   context.clearRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = 'black';
-  context.fillRect(0, 0, canvas.width, canvas.height);
+  updateStars(deltaTime, context);
   player.update(deltaTime, context);
   player.draw(context);
   bullets.forEach((bullet) => {
@@ -172,8 +187,8 @@ function updateAliens(deltaTime: number, context: CanvasRenderingContext2D) {
     lastSpawnTime = lastTime;
     const spawnAreaStartX = Math.max(0, (context.canvas.width - aliensSpawnAreaWidth) / 2);
     for (let i = 0; i < aliensPerSpawn; i++) {
-      let alienX = spawnAreaStartX + Math.floor(Date.now() * Math.random()) % (aliensSpawnAreaWidth - 50);
-      let alien = new Alien(alienX, 0, 50, 50, 'green', 100);
+      let alienX = spawnAreaStartX + Math.floor(Date.now() * Math.random()) % (aliensSpawnAreaWidth - alienWidth);
+      let alien = new Alien(alienX, 0, alienWidth, alienHeight, 'green', alienSpeed);
       aliens.push(alien);
     }
   }
@@ -216,13 +231,13 @@ function updateAliens(deltaTime: number, context: CanvasRenderingContext2D) {
 function playShootSound() {
   SoundService.getInstance(audioContext).getAudioBufferSource(import.meta.env.BASE_URL + '/assets/sounds/laser-gun-shot.wav').then((shootSoundBufferSource) => {
     shootSoundBufferSource?.start();
-});
+  });
 }
 
 function playExplosionSound() {
   SoundService.getInstance(audioContext).getAudioBufferSource(import.meta.env.BASE_URL + 'assets/sounds/alien-explosion.wav').then((explosionSoundBufferSource) => {
     explosionSoundBufferSource?.start();
-});
+  });
 }
 
 function checkGameOver() {
@@ -254,7 +269,7 @@ function checkGameOver() {
 
 
 function startGame() {
-  let gameStartButton = document.getElementById('game-start-button'); 
+  let gameStartButton = document.getElementById('game-start-button');
   if (isGameStarted) return;
   isGameStarted = true;
   if (gameStartButton) {
@@ -264,10 +279,36 @@ function startGame() {
   isMobile = isMobile || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   if (isMobile) {
     addDeviceOrientationListener();
-  } else {
-    player.speed = 300;
   }
   requestAnimationFrame(gameLoop);
+}
+
+function initializeStars(context: CanvasRenderingContext2D) {
+  let canvasWidth = context.canvas.width;
+  let canvasHeight = context.canvas.height;
+  let dateNow = Date.now();
+  for (let i=0;i< numberOfStars;i++) {
+    let starX = Math.floor(dateNow * Math.random()) % canvasWidth;
+    let startY = Math.floor(dateNow * Math.random()) % canvasHeight;
+    let radius1 = 1 + dateNow % 3;
+    let radius2 = 2 + dateNow % 3;
+    stars.push(new Star(starX, startY, radius1, radius2, 10 + dateNow % 10));
+  }
+}
+
+function updateStars(deltaTime: number, context: CanvasRenderingContext2D) {
+  let canvasWidth = context.canvas.width;
+  stars.forEach((star) => {
+    star.update(deltaTime);
+  });
+  stars = stars.filter(star => star.y < context.canvas.height);
+  if (stars.length < numberOfStars) {
+    let dateNow = Date.now();
+    let radius1 = 1 + dateNow % 3;
+    let radius2 = 2 + dateNow % 3;
+    stars.push(new Star(Math.floor(dateNow * Math.random()) % canvasWidth, 0, radius1, radius2, 10 + dateNow % 10))
+  }
+  stars.forEach(star => star.drawStar(lastTime, context));
 }
 
 function showCanvas() {
